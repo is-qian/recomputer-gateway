@@ -8,10 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=LuCI Support for LoRaWAN Gateway
-LUCI_DEPENDS:=+luci-base
+LUCI_DEPENDS:=+luci-base +lorawan-gateway
 
 PKG_MAINTAINER:=ruiqian tang <ruiqian.tang@seeed.cc>
 PKG_LICENSE:=Apache-2.0
+PKG_VERSION:=1.0
+PKG_RELEASE:=1
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

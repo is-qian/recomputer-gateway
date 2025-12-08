@@ -95,14 +95,20 @@ return view.extend({
 		o.inputstyle = 'action';
 		o.inputtitle = _('Configure Network');
 		o.onclick = function(ev, section_id) {
-			// Prioritize getting the currently selected value from DOM (unsaved changes)
-			var selectEl = document.getElementById('widget.cbid.lorawan-gateway.' + section_id + '.platform');
-			var platform = selectEl ? selectEl.value : uci.get('lorawan-gateway', section_id, 'platform');
-			if (platform == "basicstation") {
-				location.href = L.url('admin/network/lorawan-basicstation/general');
-			} else if (platform == "chirpstack") {
-				location.href = L.url('admin/chirpstack/concentratord');
-			}
+			var self = this; // 'this' refers to the view instance
+			// Save and apply configuration before navigating
+			self.handleSaveApply(ev, 'apply').then(function() {
+				// Get the platform value after save
+				var selectEl = document.getElementById('widget.cbid.lorawan-gateway.' + section_id + '.platform');
+				var platform = selectEl ? selectEl.value : uci.get('lorawan-gateway', section_id, 'platform');
+				if (platform == "basicstation") {
+					location.href = L.url('admin/network/lorawan-basicstation/general');
+				} else if (platform == "chirpstack") {
+					location.href = L.url('admin/chirpstack/concentratord');
+				}
+			}).catch(function(e) {
+				console.log('Save and apply error:', e);
+			});
 		};
 
 		// Navigation buttons

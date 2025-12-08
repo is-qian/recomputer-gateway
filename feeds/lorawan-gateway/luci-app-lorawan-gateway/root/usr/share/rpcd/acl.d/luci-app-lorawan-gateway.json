@@ -3,7 +3,7 @@
 		"description": "Grant UCI access for luci-app-lorawan-gateway",
 		"read": {
 			"file": {
-				"/tmp/lora-gateway/log": [
+				"/tmp/lorawan-gateway/log": [
 					"read"
 				]
 			},

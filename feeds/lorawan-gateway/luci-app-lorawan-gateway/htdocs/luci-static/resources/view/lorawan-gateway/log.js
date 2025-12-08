@@ -13,7 +13,7 @@ return view.extend({
 	load: function() {
 		return Promise.all([
 			uci.load('lorawan-gateway'),
-			L.resolveDefault(fs.read('/tmp/lora-gateway/log'), '')
+			L.resolveDefault(fs.read('/tmp/lorawan-gateway/log'), '')
 		]);
 	},
 
