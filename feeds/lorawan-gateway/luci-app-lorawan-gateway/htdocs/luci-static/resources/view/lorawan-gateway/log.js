@@ -3,6 +3,7 @@
 'require form';
 'require uci';
 'require fs';
+'require poll';
 
 function ensureSection(type) {
 	var section = uci.sections("lorawan-gateway", type)[0];
@@ -37,9 +38,9 @@ return view.extend({
 		o.placeholder = 'join-accept';
 
 		var logView = logSection.option(form.TextValue, '_log', _('Recent Logs'));
-		logView.readonly = false;
 		logView.rows = 18;
 		logView.wrap = 'off';
+		logView.monospace = true;
 		logView.cfgvalue = function() {
 			return logPayload || _('No logs available to display');
 		};
@@ -65,5 +66,39 @@ return view.extend({
 		};
 
 		return m.render();
+	},
+
+	handleSaveApply: null,
+	handleSave: null,
+	handleReset: null,
+
+	addFooter: function() {
+		var auto_refresh = uci.get('lorawan-gateway', 'ui', 'auto_refresh');
+
+		// Set textarea to readonly after DOM is ready
+		requestAnimationFrame(function() {
+			var textarea = document.querySelector('textarea[id*="_log"]');
+			if (textarea) {
+				textarea.setAttribute('readonly', 'readonly');
+				textarea.style.cursor = 'text';
+			}
+		});
+
+		if (auto_refresh === '1') {
+			poll.add(L.bind(function() {
+				return fs.read('/tmp/lorawan-gateway/log').then(L.bind(function(logContent) {
+					var textarea = document.querySelector('textarea[id*="_log"]');
+					if (textarea) {
+						var scrolledToBottom = (textarea.scrollHeight - textarea.scrollTop <= textarea.clientHeight + 50);
+						textarea.value = (logContent || '').trim() || _('No logs available to display');
+						if (scrolledToBottom) {
+							textarea.scrollTop = textarea.scrollHeight;
+						}
+					}
+				}, this)).catch(function(err) {
+					console.error('Failed to read log file:', err);
+				});
+			}, this), 1);
+		}
 	}
 });
