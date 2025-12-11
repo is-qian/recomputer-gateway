@@ -11,14 +11,14 @@ use tokio::time::sleep;
 use tokio_serial::{DataBits, Parity, StopBits, SerialPortBuilderExt};
 
 // Mqtt and Serial Configuration Structures
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 struct Config {
     mqtt: MqttConfig,
     serial: SerialConfig,
 }
 
 // MQTT Configuration Structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 struct MqttConfig {
     enabled: bool,
     host: String,
@@ -29,18 +29,18 @@ struct MqttConfig {
     keepalive: u64,
     uplink_topic: String,
     downlink_topic: String,
-    qos_level: u8,
+    qos_level: QoS,
     reconnect_delay: u64,
 }
 
 // Serial Configuration Structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 struct SerialConfig {
     device: String,
     baudrate: u32,
-    databit: u8,
-    stopbit: String,
-    checkbit: String,
+    databit: DataBits,
+    stopbit: StopBits,
+    checkbit: Parity,
 }
 
 // RS485 -> MQTT Message Structure
@@ -156,7 +156,11 @@ fn load_config_from_uci() -> Result<Config, Box<dyn std::error::Error + Send + S
         keepalive,
         uplink_topic,
         downlink_topic,
-        qos_level,
+        qos_level: match qos_level {
+            1 => QoS::AtLeastOnce,
+            2 => QoS::ExactlyOnce,
+            _ => QoS::AtMostOnce, 
+        },
         reconnect_delay,
     };
 
@@ -179,9 +183,21 @@ fn load_config_from_uci() -> Result<Config, Box<dyn std::error::Error + Send + S
     let serial_config = SerialConfig {
         device,
         baudrate,
-        databit,
-        stopbit,
-        checkbit,
+        databit: match databit {
+            5 => DataBits::Five,
+            6 => DataBits::Six,
+            7 => DataBits::Seven,
+            _ => DataBits::Eight,
+        },
+        stopbit: match stopbit.as_str() {
+            "2" => StopBits::Two,
+            _ => StopBits::One,
+        },
+        checkbit: match checkbit.as_str() {
+            "odd" => Parity::Odd,
+            "even" => Parity::Even,
+            _ => Parity::None,
+        },
     };
 
     Ok(Config {
@@ -213,50 +229,18 @@ fn setup_mqtt_client(
 // Configure serial port settings
 async fn setup_serial(
     config: &SerialConfig,
-    logger: &Arc<Logger>,
 ) -> Result<tokio_serial::SerialStream, Box<dyn std::error::Error + Send + Sync>> {
-
-    // Map databit to DataBits enum
-    let databits = match config.databit {
-        5 => DataBits::Five,
-        6 => DataBits::Six,
-        7 => DataBits::Seven,
-        8 => DataBits::Eight,
-        _ => DataBits::Eight,
-    };
-
-    // Map stopbit to StopBits enum
-    let stopbits = match config.stopbit.as_str() {
-        "1" => StopBits::One,
-        "2" => StopBits::Two,
-        _ => StopBits::One,
-    };
-
-    // Map checkbit to Parity enum
-    let parity = match config.checkbit.as_str() {
-        "odd" => Parity::Odd,
-        "even" => Parity::Even,
-        _ => Parity::None,
-    };
-
-    // Log serial port settings
-    logger.log(&format!(
-        "Opening serial port: {} @ {} baud, {} data bits, {:?} stop bits, {:?} parity",
-        config.device, config.baudrate, config.databit, stopbits, parity
-    ));
 
     // Open serial port with specified settings
     let port = tokio_serial::new(&config.device, config.baudrate)
-        .data_bits(databits)
-        .stop_bits(stopbits)
-        .parity(parity)
+        .data_bits(config.databit)
+        .stop_bits(config.stopbit)
+        .parity(config.checkbit)
         .open_native_async()
         .map_err(|e| {
-            logger.log(&format!("Failed to open serial port: {}", e));
             e
         })?;
     
-    logger.log("Serial port opened successfully");
     Ok(port)
 }
 
@@ -271,16 +255,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut config = match load_config_from_uci() {
         Ok(cfg) => cfg,
         Err(e) => {
-            logger.log(&format!("Failed to load config: {}", e));
+            logger.log(&format!("Failed to setup config: {}", e));
             return Err(e);
         }
     };
 
     // Initialize serial port
-    let mut serial_port = match setup_serial(&config.serial, &logger).await {
-        Ok(port) => port,
+    let mut serial_port = match setup_serial(&config.serial).await {
+        Ok(port) => {
+            logger.log(&format!(
+                "Opening serial port: {} @ {} baud, {:?} data bits, {:?} stop bits, {:?} parity",
+                config.serial.device, config.serial.baudrate, config.serial.databit, config.serial.stopbit, config.serial.checkbit
+            ));
+            logger.log("Success opening serial port");
+            port
+        }
         Err(e) => {
-            logger.log(&format!("Failed to setup serial: {}", e));
+            logger.log(&format!("Failed opening serial port: {}", e));
             return Err(e);
         }
     };
@@ -288,15 +279,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut mqtt_client: Option<AsyncClient> = None;                // MQTT client
     let mut mqtt_eventloop: Option<rumqttc::EventLoop> = None;      // MQTT event loop
     let mut mqtt_state = "not_connect";                             // MQTT connection state   
-    let mqtt_qos = match config.mqtt.qos_level {
-        0 => QoS::AtMostOnce,
-        1 => QoS::AtLeastOnce,
-        2 => QoS::ExactlyOnce,
-        _ => QoS::AtLeastOnce, 
-    };
 
     loop {
-            // Reload configuration
+            // Load configuration
             config = match load_config_from_uci() {
                 Ok(cfg) => cfg,
                 Err(e) => {
@@ -339,15 +324,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                                         Incoming::ConnAck(_) => {
                                             // Subscribe to downlink topic
                                             if let Some(ref client) = mqtt_client {
-                                                match client.subscribe(&config.mqtt.downlink_topic, mqtt_qos).await {
+                                                match client.subscribe(&config.mqtt.downlink_topic, config.mqtt.qos_level).await {
                                                     Ok(_) => {
-                                                        logger.log(&format!("Subscribed to topic: {}", config.mqtt.downlink_topic));
+                                                        logger.log(&format!("Subscribed [MQTT->RS485] to topic: {}", config.mqtt.downlink_topic));
                                                     }
                                                     Err(e) => {
-                                                        logger.log(&format!("Failed to subscribe: {}", e));
+                                                        logger.log(&format!("Failed to topic: {}", e));
                                                     }
                                                 }
                                             }
+                                            logger.log(&format!("Published [RS485->MQTT] to topic: {}", config.mqtt.uplink_topic));
                                         }
                                         // Handle incoming publish messages
                                         Incoming::Publish(p) => {
@@ -370,7 +356,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                                         }
                                         // Handle subscription acknowledgment
                                         Incoming::SubAck(_) => {
-                                            logger.log("Subscription acknowledged");
+                                            // logger.log("Subscription acknowledged");
                                         }
                                         // Handle disconnection
                                         Incoming::Disconnect => {
@@ -378,7 +364,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                                             mqtt_state = "failed_connect";
                                         }
                                         // Handle other incoming events
-                                        other => {
+                                        _ => {
                                             // logger.log(&format!("MQTT event: {:?}", other));
                                         }
                                     }
@@ -400,15 +386,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                             match serial_result {
                                 Ok((n, buffer)) if n > 0 => {
                                     let data_str = String::from_utf8_lossy(&buffer[..n]).trim().to_string();
-                                    logger.log(&format!("RS485 received ({} bytes): {}", n, data_str));
+                                    logger.log(&format!("RS485 received: {}", data_str));
                                     
                                     if let Some(ref client) = mqtt_client {
                                         let uplink_msg = UplinkMessage { data: data_str.clone() };
                                         match serde_json::to_string(&uplink_msg) {
                                             Ok(json) => {
-                                                match client.publish(&config.mqtt.uplink_topic, mqtt_qos, false, json.as_bytes()).await {
+                                                match client.publish(&config.mqtt.uplink_topic, config.mqtt.qos_level, false, json.as_bytes()).await {
                                                     Ok(_) => {
-                                                        logger.log(&format!("Published to MQTT: {}", data_str));
+                                                        logger.log(&format!("Published to MQTT: {}", json));
                                                     }
                                                     Err(e) => {
                                                         logger.log(&format!("MQTT publish failed: {}", e));
