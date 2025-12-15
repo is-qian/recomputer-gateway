@@ -1,0 +1,13 @@
+[package]
+    name = "ups-module"
+    version = "1.0.0"
+    edition = "2021"
+    license = "MIT"
+    description = "UPS Power Monitor for GPIO-based Power Outage Detection"
+
+[dependencies]
+    tokio = { version = "1.41", features = ["full"] }
+    serde = { version = "1.0", features = ["derive"] }
+    serde_json = "1.0"
+    chrono = "0.4"
+    gpio-cdev = "0.6"
