@@ -1,0 +1,30 @@
+{
+    "luci-app-ups": {
+        "description": "Grant access to UPS configuration",
+        "read": {
+            "file": {
+                    "/tmp/ups/log": [
+                        "read"
+                    ]
+                },
+                "ubus": {
+                    "uci": [
+                        "get"
+                    ]
+                },
+                "uci": [
+                    "ups-module"
+                ]
+        },
+        "write": {
+            "ubus": {
+                "uci": [
+                    "set"
+                ]
+            },
+            "uci": [
+                "ups-module"
+            ]
+        }
+    }
+}
