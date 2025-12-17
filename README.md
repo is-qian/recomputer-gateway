@@ -1,18 +1,17 @@
-# reComputer Gateway OpenWrt Firmware
+# Seeed gateway packages for OpenWrt
 
-This project provides the build environment and configuration for the reComputer Gateway OpenWrt firmware. It is based on OpenWrt 24.10 and integrates ChirpStack components for LoRaWAN gateway functionality.
+This project provides the build environment and default configuration for the reComputer Gateway firmware based on OpenWrt. It integrates LoRa gateway support across **ChirpStack**, **Semtech packet_forwarder**, and **Basic Station**, and also includes cellular (4G/LTE) dial-up networking plus MQTT and serial (UART/RS485) related utilities.
 
 ## Features
 
-- **Base System**: OpenWrt 24.10
-- **LoRaWAN**: Integrated ChirpStack Gateway Bridge / Concentratord
-- **Hardware Support**: Pre-configured for reComputer Gateway
-- **Custom Feeds**: Includes custom feeds for LoRaWAN support
+- **Base System**: OpenWrt 
+- **LoRaWAN**: Supports multiple LoRa gateway stacks/platforms: **ChirpStack**, **Semtech packet_forwarder**, and **Basic Station**
+- **Cellular (4G/LTE)**: Supports 4G dial-up networking for Internet access
+- **Services**: MQTT and serial (UART/RS485) related utilities
 
 ## Directory Structure
 
 - `feeds/`: Contains custom feeds for ChirpStack and LoRaWAN gateway packages.
-- `openwrt/`: The OpenWrt source code (submodule).
 - `.config`: Default OpenWrt build configuration.
 - `feeds.conf.default`: Custom feeds configuration.
 
@@ -36,7 +35,7 @@ file wget
 
     ```bash
     git clone <repository_url>
-    cd sensecap-openwrt-feed
+    cd recomputer-gateway
     ```
 
 2.  **Initialize Submodules:**
