@@ -15,6 +15,11 @@ uci set network.globals.ula_prefix='fdf4:628a:1dc9::/48'
 uci set network.wan=interface
 uci set network.wan.device='eth0'
 uci set network.wan.proto='dhcp'
+uci set network.LTE=interface
+uci set network.LTE.proto='qmi'
+uci set network.LTE.device='/dev/cdc-wdm0'
+uci set network.LTE.auth='none'
+uci set network.LTE.pdptype='ipv4v6'
 uci commit network
 
 # Set firewall rules
