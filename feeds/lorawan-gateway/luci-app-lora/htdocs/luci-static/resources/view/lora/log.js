@@ -12,14 +12,17 @@ function ensureSection(type) {
 
 return view.extend({
 	load: function() {
-		return Promise.all([
-			uci.load('lora'),
-			L.resolveDefault(fs.read('/tmp/lora/log'), '')
-		]);
+		return uci.load('lora').then(function() {
+			var platform = uci.get('lora', 'radio', 'platform') || 'chirpstack';
+			var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'chirpstack';
+			return fs.exec('/sbin/logread', ['-e', pattern]).then(function(res) {
+				return res.stdout || '';
+			}).catch(function() { return ''; });
+		});
 	},
 
-	render: function(data) {
-		var logPayload = (data[1] || '').trim();
+	render: function(logPayload) {
+		logPayload = (logPayload || '').trim();
 
 		var m = new form.Map('lora', _('Log Viewer'), _('View LoRaWAN logs.'));
 
@@ -67,7 +70,10 @@ return view.extend({
 
 		if (auto_refresh === '1') {
 			poll.add(L.bind(function() {
-				return fs.read('/tmp/lora/log').then(L.bind(function(logContent) {
+				var platform = uci.get('lora', 'radio', 'platform') || 'chirpstack';
+				var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'chirpstack';
+				return fs.exec('/sbin/logread', ['-e', pattern]).then(L.bind(function(res) {
+					var logContent = res.stdout;
 					var textarea = document.querySelector('textarea[id*="_log"]');
 					if (textarea) {
 						var scrolledToBottom = (textarea.scrollHeight - textarea.scrollTop <= textarea.clientHeight + 50);

@@ -32,6 +32,9 @@ define Package/lora/install
 	$(INSTALL_CONF) ./files/lora.config $(1)/etc/config/lora
 	$(INSTALL_CONF) ./files/basicstation.config $(1)/etc/config/basicstation
 
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/basicstation.init $(1)/etc/init.d/basicstation
+
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/radio_init $(1)/usr/bin/radio_init
 endef

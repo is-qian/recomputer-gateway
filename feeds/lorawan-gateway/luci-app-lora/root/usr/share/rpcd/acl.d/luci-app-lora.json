@@ -6,6 +6,9 @@
                 "/tmp/lora/log": [
                     "read"
                 ],
+                "/sbin/logread": [
+                    "exec"
+                ],
                 "/etc/device_eui": [
                     "read"
                 ]

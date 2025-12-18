@@ -59,6 +59,18 @@ function lorawanGatewayRender(platform_cur) {
 	o.rmempty = false;
 	o.default = "1";
 
+	// platform
+	var platform = loraSection.option(form.ListValue, "platform", _("Platform Type"));
+	platform.value("basic_station", "Basic Station");
+	platform.value("packet_forwarder", "Packet Forwarder");
+	platform.value("chirpstack", "ChirpStack");
+	platform.default = "basic_station";
+
+	platform.onchange = function (ev, section_id, values) {
+		uci.set("lora", section_id, "platform", values);
+		handleSwitchPlatform(values)
+	};
+
 	// eui
 	o = loraSection.option(form.Value, 'eui', _('Gateway EUI'), ('Path to file containing the Gateway EUI in hex format (e.g. 00:11:22:33:44:55:66:77)'));
 	o.optional = false;
@@ -85,17 +97,7 @@ function lorawanGatewayRender(platform_cur) {
 		uci.set('lora', section_id, 'channel_plan', value);
 		regions.setLoRaRegion(value);
 	}
-	// platform
-	var platform = loraSection.option(form.ListValue, "platform", _("Platform Type"));
-	platform.value("basic_station", "Basic Station");
-	platform.value("packet_forwarder", "Packet Forwarder");
-	platform.value("chirpstack", "ChirpStack");
-	platform.default = "basic_station";
 
-	platform.onchange = function (ev, section_id, values) {
-		uci.set("lora", section_id, "platform", values);
-		handleSwitchPlatform(values)
-	};
 	switch (platform_cur) {
 		case "basic_station": {
 			platform_map = basicStation.view();
