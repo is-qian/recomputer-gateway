@@ -1,0 +1,15 @@
+{
+	"luci-app-ota": {
+		"description": "Grant access to OTA upgrade interface",
+		"read": {
+			"uci": [
+				"ota"
+			]
+		},
+		"write": {
+			"uci": [
+				"ota"
+			]
+		}
+	}
+}

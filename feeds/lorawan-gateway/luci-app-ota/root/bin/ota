@@ -1,0 +1,164 @@
+#!/bin/sh
+# Simplified OTA script - direct download from fixed URL
+
+if [ -f /lib/upgrade/ota.sh ]; then
+    . /lib/upgrade/ota.sh
+    export_ota_url
+fi
+
+if [ -z "$OTA_URL_BASE" ]; then
+	echo "Unsupported device." >&2
+	exit 255
+fi
+
+WRLOCK=/var/lock/ota_background.lock
+STLOCK=/var/lock/ota_status.lock
+
+action=${1}
+shift
+
+download() {
+	local url="$1"
+	exec 300>$STLOCK
+	flock 300
+	touch /tmp/firmware.img.part
+	echo >/tmp/firmware.img.progress
+	flock -u 300
+	
+	local pid
+	echo "Downloading from $url" > /tmp/firmware.img.progress
+	flock 300
+	echo "#=#=#" >>/tmp/firmware.img.progress
+	curl -L --fail --show-error --connect-timeout 5 --progress-bar -o /tmp/firmware.img.part "$url" 2>>/tmp/firmware.img.progress &
+	pid="$!"
+	echo "$pid" > /var/run/ota/download.pid
+	flock -u 300
+	
+	if wait $pid; then
+		rm -f /var/run/ota/download.pid
+		echo "Download completed" > /tmp/firmware.img.progress
+		flock 300
+		mv /tmp/firmware.img.part /tmp/firmware.img
+		rm -f /tmp/firmware.img.progress
+		flock -u 300
+		return 0
+	else
+		local ecode=$?
+		echo >>/tmp/firmware.img.progress
+		if [ $ecode -eq 143 ]; then
+			echo "Canceled!" >> /tmp/firmware.img.progress
+		else
+			echo "Download failed!" >> /tmp/firmware.img.progress
+		fi
+		flock 300
+		sed -i '/\r/d' /tmp/firmware.img.progress
+		flock -u 300
+	fi
+	rm -f /var/run/ota/download.pid
+	rm -f /tmp/firmware.img.part
+	return 1
+}
+
+lock_download() {
+	local lock="$WRLOCK"
+	exec 200>$lock
+	flock -n 200 || return
+	download "$OTA_URL_BASE"
+	flock -u 200
+}
+
+do_check() {
+	local ret=0
+	local lock="$WRLOCK"
+	exec 200>$lock
+	if flock -n 200; then
+		mkdir -p /var/run/ota
+		echo "<pre>Firmware URL: $OTA_URL_BASE</pre>" > /var/run/ota/ota.log
+		echo "<br><h2>Ready to download</h2>" >> /var/run/ota/ota.log
+		echo "<p>Click 'Download' to start firmware upgrade</p>" >> /var/run/ota/ota.log
+		ret=0
+		flock -u 200 >/dev/null 2>&1
+	elif [ -f /tmp/firmware.img.progress -o -f /tmp/firmware.img ]; then
+		ret=2
+	else
+		echo "lock failed!" >&2
+		return 255
+	fi
+
+	if [ "$ret" -eq 0 -o "$ret" -eq 2 ]; then
+		cat /var/run/ota/ota.log
+	fi
+	return $ret
+}
+
+do_download(){
+	lock_download &
+	return 0
+}
+
+do_progress() {
+	[ -f /tmp/firmware.img ] && [ ! -f /tmp/firmware.img.progress ] && return 0
+	[ -f /tmp/firmware.img.progress ] || { echo "download not in progress" >&2 ; return 254; }
+	[ -f /tmp/firmware.img.part ] && { cat /tmp/firmware.img.progress | tr '\r' '\n' | tail -n1; return 1; }
+	tail -1 /tmp/firmware.img.progress | grep -Fq 'Canceled!' && { echo "Canceled"; return 2; }
+	cat /tmp/firmware.img.progress | tr '\r' '\n' | grep -v '^$' | tail -n1 >&2
+	return 3
+}
+
+do_progress_locked() {
+	local ret
+	exec 300>$STLOCK
+	flock -s 300
+	do_progress
+	ret=$?
+	flock -u 300
+	return $ret
+}
+
+do_cancel() {
+	if [ -f /var/run/ota/download.pid ]; then
+		local pid=`cat /var/run/ota/download.pid`
+		if [ -n "$pid" ]; then
+			kill -TERM $pid;
+			while kill -0 $pid >/dev/null 2>&1; do
+				if ! sleep 1; then
+					break
+				fi
+			done
+		fi
+	fi
+	return 0
+}
+
+ota_init(){
+	mkdir -p /var/run/ota >/dev/null 2>&1 || true
+}
+
+usage() {
+	echo "usage: ota sub-command"
+	echo "where sub-command is one of:"
+	echo "      check                  Check firmware upgrade"
+	echo "      download               Download latest firmware"
+	echo "      progress               Download progress"
+	echo "      cancel                 Cancel download"
+}
+
+ota_init || exit 255
+
+case $action in
+	"check")
+		do_check
+	;;
+	"download")
+		do_download
+	;;
+	"progress")
+		do_progress_locked
+	;;
+	"cancel")
+		do_cancel
+	;;
+	*)
+		usage
+	;;
+esac

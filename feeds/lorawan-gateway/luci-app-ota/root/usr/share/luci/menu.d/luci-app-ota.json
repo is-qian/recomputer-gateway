@@ -1,0 +1,15 @@
+{
+	"admin/gateway/ota": {
+		"title": "OTA",
+		"order": 50,
+		"action": {
+			"type": "alias",
+			"path": "admin/gateway/ota/index"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-ota"
+			]
+		}
+	}
+}
