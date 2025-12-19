@@ -20,6 +20,9 @@ uci set network.LTE.proto='qmi'
 uci set network.LTE.device='/dev/cdc-wdm0'
 uci set network.LTE.auth='none'
 uci set network.LTE.pdptype='ipv4v6'
+uci set network.wlan=interface
+uci set network.wlan.proto='dhcp'
+uci set network.wlan.device='wlan0'
 uci commit network
 
 # Set firewall rules
