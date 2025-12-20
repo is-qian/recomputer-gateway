@@ -88,7 +88,14 @@ jobs:
           name: recomputer-gateway
           path: |
             ./openwrt/bin/targets/armsr/armv8/openwrt-armsr-armv8-generic-rootfs.tar.gz
-
+            
+      - name: Create version.txt file
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Version: ${{ github.event.inputs.tag_name }}" > version.txt
+          echo "Build Date: $(date '+%Y-%m-%d %H:%M:%S')" >> version.txt
+          cat version.txt
+          
       - name: Create Release
         if: github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v1
@@ -97,6 +104,7 @@ jobs:
           name: ${{ github.event.inputs.tag_name }}
           files: |
             ./openwrt/bin/targets/armsr/armv8/openwrt-armsr-armv8-generic-rootfs.tar.gz
+            version.txt
           draft: false
           prerelease: false
         env:
