@@ -92,9 +92,13 @@ jobs:
       - name: Create version.txt file
         if: github.event_name == 'workflow_dispatch'
         run: |
+          cd ./openwrt/bin/targets/armsr/armv8/
           echo "Version: ${{ github.event.inputs.tag_name }}" > version.txt
           echo "Build Date: $(date '+%Y-%m-%d %H:%M:%S')" >> version.txt
-          cat version.txt
+          mkdir openwrt-armsr-armv8-generic-rootfs && cd openwrt-armsr-armv8-generic-rootfs
+          tar -xzf ../openwrt-armsr-armv8-generic-rootfs.tar.gz && cp ../version.txt ./
+          tar -czf ../openwrt-armsr-armv8-generic-rootfs.tar.gz *
+          tar -tzf ../openwrt-armsr-armv8-generic-rootfs.tar.gz | grep version.txt
           
       - name: Create Release
         if: github.event_name == 'workflow_dispatch'
@@ -104,7 +108,7 @@ jobs:
           name: ${{ github.event.inputs.tag_name }}
           files: |
             ./openwrt/bin/targets/armsr/armv8/openwrt-armsr-armv8-generic-rootfs.tar.gz
-            version.txt
+            ./openwrt/bin/targets/armsr/armv8/version.txt
           draft: false
           prerelease: false
         env:
