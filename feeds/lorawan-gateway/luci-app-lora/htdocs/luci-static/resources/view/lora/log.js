@@ -17,7 +17,7 @@ return view.extend({
 			ensureSection('ui');
 			var radioSection = uci.sections('lora', 'radio')[0];
 			var platform = radioSection ? (radioSection.platform || 'chirpstack') : 'chirpstack';
-			var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'chirpstack';
+			var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'lora_pkt_fwd';
 			return fs.exec('/sbin/logread', ['-e', pattern]).then(function(res) {
 				return res.stdout || '';
 			}).catch(function() { return ''; });
@@ -94,7 +94,7 @@ return view.extend({
 
 			var radioSection = uci.sections('lora', 'radio')[0];
 			var platform = radioSection ? (radioSection.platform || 'chirpstack') : 'chirpstack';
-			var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'chirpstack';
+			var pattern = (platform === 'basic_station') ? 'station\\[.*\\]' : 'lora_pkt_fwd';
 			
 			return fs.exec('/sbin/logread', ['-e', pattern]).then(function(res) {
 				updateLog(res.stdout);
