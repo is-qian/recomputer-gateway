@@ -56,6 +56,8 @@ define Package/basicstation_ubus/install
 	$(INSTALL_CONF) ./files/etc/config/basicstation $(1)/etc/config/basicstation
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/basicstation $(1)/etc/init.d/basicstation
+	$(INSTALL_DIR) $(1)/etc/basicstation
+	$(INSTALL_DATA) ./files/etc/basicstation/* $(1)/etc/basicstation/
 endef
 
 $(eval $(call BuildPackage,basicstation_ubus))

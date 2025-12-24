@@ -128,26 +128,36 @@ parse_sx130x() {
 	local section="$1"
 	local comif
 	local devpath
+	local region
 	local buffer
-
-	json_add_object 'radio_conf'
 
 	config_get comif "$section" comif "$DEFAULT_COMIF"
 	config_get devpath "$section" devpath "$DEFAULT_DEVPATH"
-	json_add_string 'device' ""$comif":"$devpath""
-	config_get_bool buffer "$section" pps "$DEFAULT_PPS"
-	json_add_boolean 'pps' "$buffer"
-	config_get_bool buffer "$section" public "$DEFAULT_PUBLIC"
-	json_add_boolean 'lorawan_public' "$buffer"
-	config_get buffer "$section" clksrc "$DEFAULT_CLKSRC"
-	json_add_int 'clksrc' "$buffer"
-	json_add_boolean 'full_duplex' 0
-	config_get buffer "$section" radio0 "$DEFAULT_RADIO_0"
-	config_foreach parse_rfconf rfconf "$buffer" 0
-	config_get buffer "$section" radio1 "$DEFAULT_RADIO_1"
-	config_foreach parse_rfconf rfconf "$buffer" 1
+	config_get region "$section" region
 
-	json_close_object
+	if [ -n "$region" ] && [ -f "/etc/basicstation/$region.json" ]; then
+		json_load_file "/etc/basicstation/${region}.json"
+		json_select radio_conf
+		json_add_string device "${comif}:${devpath}"
+		json_select ..
+	else
+		json_add_object 'radio_conf'
+
+		json_add_string 'device' ""$comif":"$devpath""
+		config_get_bool buffer "$section" pps "$DEFAULT_PPS"
+		json_add_boolean 'pps' "$buffer"
+		config_get_bool buffer "$section" public "$DEFAULT_PUBLIC"
+		json_add_boolean 'lorawan_public' "$buffer"
+		config_get buffer "$section" clksrc "$DEFAULT_CLKSRC"
+		json_add_int 'clksrc' "$buffer"
+		json_add_boolean 'full_duplex' 0
+		config_get buffer "$section" radio0 "$DEFAULT_RADIO_0"
+		config_foreach parse_rfconf rfconf "$buffer" 0
+		config_get buffer "$section" radio1 "$DEFAULT_RADIO_1"
+		config_foreach parse_rfconf rfconf "$buffer" 1
+
+		json_close_object
+	fi
 }
 
 parse_station() {
