@@ -6,8 +6,8 @@ const GPIOCHIP: &str = "/dev/gpiochip2";
 
 // Offsets on gpiochip2 (0/1/2)
 const SX1302_POWER_EN: u32 = 0;
-const SX1302_RESET: u32 = 1;
-const SX1261_RESET: u32 = 2;
+const SX1302_RESET: u32 = 2;
+const SX1261_RESET: u32 = 1;
 
 fn wait_gpio() {
     thread::sleep(Duration::from_millis(100));
@@ -44,7 +44,7 @@ fn start() -> anyhow::Result<()> {
     wait_gpio();
     h_sx1261.set_value(1)?;
     wait_gpio();
-
+    
     Ok(())
 }
 
