@@ -15,13 +15,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/Lora-net/sx1302_hal/tar.gz/V$(PKG_VERSION)?
 PKG_HASH:=4b62aa6a83ad449c68fdd844fc35024586c9faabca3c5a90a2544735b380de5b
 PKG_LICENSE_FILES:=LICENSE.TXT
+PKG_BUILD_DEPENDS:=sx1302_hal
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/packetforwarder/Default
   SECTION:=gateway
   CATEGORY:=Gateway
-  TITLE:=SX1302/SX1303 HAL(add ubus message support)
+  TITLE:=SX1302/SX1303 packet forwarder(add ubus message support)
 endef
 
 define Package/lora_pkt_fwd
@@ -38,8 +39,7 @@ define Package/lora_pkt_fwd/config
 	select BUSYBOX_DEFAULT_USLEEP
 endef
 
-#TARGET_CFLAGS += $(FPIC) -O2 -Wall -Wextra -std=c99 -Iinc -I. -lm  -I../libtools/inc -DSPI_SPEED=$(CONFIG_SX1302_SPI_SPEED)
-TARGET_CFLAGS = -O2 -Wall -Wextra -std=c99 -Iinc -I. -lm  -I../libtools/inc -DSPI_SPEED=$(CONFIG_SX1302_SPI_SPEED) -DI2C_DEVICE=\\\"$(CONFIG_SX1302_I2C_PATH)\\\" -DLED_NAME=\\\"$(CONFIG_SX1302_LED_NAME)\\\" -DLED_INTERVAL=\\\"$(CONFIG_SX1302_LED_INTERVAL)\\\"
+TARGET_CFLAGS = -O2 -Wall -Wextra -std=c99 -Iinc -I. -lm  -I../libtools/inc
 
 define Package/lora_pkt_fwd/conffiles
 /etc/config/packetforwarder
@@ -50,6 +50,15 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) --strip-components=1 -xf $(DL_DIR)/$(PKG_SOURCE)
 	[ ! -d ./src/ ] || cp -fpR ./src/. $(PKG_BUILD_DIR)
 	$(call Build/Patch/Default)
+endef
+
+# replace /libloragw/inc/*.h and /libloragw/*.a with the ones from sx1302_hal
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include/lgw
+	$(CP) $(PKG_BUILD_DIR)/libloragw/inc/*.h $(1)/usr/include/lgw
+
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libloragw/*.a $(1)/usr/lib
 endef
 
 define Package/lora_pkt_fwd/install
