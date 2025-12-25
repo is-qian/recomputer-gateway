@@ -42,8 +42,7 @@ endef
 TARGET_CFLAGS = -O2 -Wall -Wextra -std=c99 -Iinc -I. -lm  -I../libtools/inc -DSPI_SPEED=$(CONFIG_SX1302_SPI_SPEED) -DI2C_DEVICE=\\\"$(CONFIG_SX1302_I2C_PATH)\\\" -DLED_NAME=\\\"$(CONFIG_SX1302_LED_NAME)\\\" -DLED_INTERVAL=\\\"$(CONFIG_SX1302_LED_INTERVAL)\\\"
 
 define Package/lora_pkt_fwd/conffiles
-/etc/config/lora_radio
-/etc/config/lora_network
+/etc/config/packetforwarder
 endef
 
 define Build/Prepare
