@@ -80,7 +80,7 @@ jobs:
           unset CI
           unset GITHUB_ACTIONS
           unset CONTINUOUS_INTEGRATION
-          make -j$(nproc)
+          make -j$(nproc) || make -j$(nproc)
       
       - name: Upload recomputer-gateway artifacts
         uses: actions/upload-artifact@v4
