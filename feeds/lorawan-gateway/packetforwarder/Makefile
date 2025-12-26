@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/Lora-net/sx1302_hal/tar.gz/V$(PKG_VERSION)?
 PKG_HASH:=4b62aa6a83ad449c68fdd844fc35024586c9faabca3c5a90a2544735b380de5b
 PKG_LICENSE_FILES:=LICENSE.TXT
-PKG_BUILD_DEPENDS:=sx1302_hal
+PKG_BUILD_DEPENDS:=sx1302_hal-utils
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,7 +28,7 @@ endef
 define Package/lora_pkt_fwd
   $(call Package/packetforwarder/Default)
   TITLE+=(Packet Forwarder)
-  DEPENDS:=+kmod-usb-acm +kmod-spi-dev +librt +libpthread
+  DEPENDS:=+kmod-usb-acm +kmod-spi-dev +librt +libpthread +sx1302_hal-utils
 endef
 
 define Package/lora_pkt_fwd/description
