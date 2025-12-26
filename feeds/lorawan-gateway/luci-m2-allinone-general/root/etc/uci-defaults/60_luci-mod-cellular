@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ -e "/etc/deviceinfo/lte" ]; then
+	lte=$(cat /etc/deviceinfo/lte)
+else
+	lte="no"
+fi
+
+if [ "$lte" != "yes" ]; then
+	rm /usr/share/luci/menu.d/luci-mod-cellular.json
+fi
+
+/etc/init.d/rpcd restart
+
+exit 0

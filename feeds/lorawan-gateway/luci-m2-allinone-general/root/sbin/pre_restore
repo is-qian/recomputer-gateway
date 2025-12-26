@@ -1,0 +1,97 @@
+#!/bin/sh
+
+CONF_RESTORE="$1"
+
+BACK_CONF_DIR="/tmp/backup_conf"
+
+rm -rf "$BACK_CONF_DIR"
+mkdir -p $BACK_CONF_DIR
+
+tar -C $BACK_CONF_DIR -xzf "$CONF_RESTORE"
+
+
+# Users are not allowed to modify these files
+rm -f $BACK_CONF_DIR/etc/inittab
+rm -f $BACK_CONF_DIR/etc/config/dropbear
+rm -f $BACK_CONF_DIR/etc/dropbear/authorized_keys
+
+rm -f $BACK_CONF_DIR/etc/uhttpd.crt
+rm -f $BACK_CONF_DIR/etc/uhttpd.key
+
+# restore ssid
+ssid=`uci get  wireless.default_radio0.ssid`
+uci -c $BACK_CONF_DIR/etc/config  set  wireless.default_radio0.ssid="$ssid"
+uci -c $BACK_CONF_DIR/etc/config  commit wireless
+
+# restore rgb_config
+gps_enable=`uci get rgb_config.RGB.gps_enable`
+ble_enable=`uci get rgb_config.RGB.ble_enable`
+lte_enable=`uci get rgb_config.RGB.lte_enable`
+uci -c $BACK_CONF_DIR/etc/config  set  rgb_config.RGB.gps_enable="$gps_enable"
+uci -c $BACK_CONF_DIR/etc/config  set  rgb_config.RGB.ble_enable="$ble_enable"
+uci -c $BACK_CONF_DIR/etc/config  set  rgb_config.RGB.lte_enable="$lte_enable"
+uci -c $BACK_CONF_DIR/etc/config  commit rgb_config
+
+# restore network
+ula_prefix=$(uci get network.globals.ula_prefix 2>/dev/null)
+macaddr1=$(uci get network.@device[1].macaddr 2>/dev/null)
+macaddr2=$(uci get network.@device[2].macaddr 2>/dev/null)
+if [ -z "$macaddr1" ] || [ -z "$macaddr2" ]; then
+    logger "macaddr get failed"
+    exit 1
+fi
+uci -c $BACK_CONF_DIR/etc/config  set  network.globals.ula_prefix="$ula_prefix"
+uci -c $BACK_CONF_DIR/etc/config  set  network.@device[1].macaddr="$macaddr1"
+uci -c $BACK_CONF_DIR/etc/config  set  network.@device[2].macaddr="$macaddr2"
+uci -c $BACK_CONF_DIR/etc/config  commit network
+
+# backup config check
+#lte check
+TAR_ENABLE_LTE=`uci -c $BACK_CONF_DIR/etc/config  get  mwan3.lte.enabled`
+CUR_ENABLE_LTE=`uci get  mwan3.lte.enabled`
+if [ "x$TAR_ENABLE_LTE" != "x$CUR_ENABLE_LTE" ]; then
+    logger "can't restore mwan3 config"
+    exit 1
+fi
+
+# freq check
+TAR_REGION=`uci -c $BACK_CONF_DIR/etc/config  get  lora_radio.freq_plan.region`
+CUR_REGION=`uci get  lora_radio.freq_plan.region`
+case "$TAR_REGION" in
+    US915) TAR_MODEM="915";;
+    AU915) TAR_MODEM="915";;
+    AS923) TAR_MODEM="915";;
+    KR920) TAR_MODEM="915";;
+    Customized915) TAR_MODEM="915";;
+    EU868) TAR_MODEM="868";;
+    IN865) TAR_MODEM="868";;
+    RU864) TAR_MODEM="868";;
+    Customized868) TAR_MODEM="868";;
+    CN470) TAR_MODEM="470";;
+    Customized470) TAR_MODEM="470";;
+    *) TAR_MODEM="";;
+esac
+
+case "$CUR_REGION" in
+    US915) CUR_MODEM="915";;
+    AU915) CUR_MODEM="915";;
+    AS923) CUR_MODEM="915";;
+    KR920) CUR_MODEM="915";;
+    Customized915) CUR_MODEM="915";;
+    EU868) CUR_MODEM="868";;
+    IN865) CUR_MODEM="868";;
+    RU864) CUR_MODEM="868";;
+    Customized868) CUR_MODEM="868";;
+    CN470) CUR_MODEM="470";;
+    Customized470) CUR_MODEM="470";;
+    *) CUR_MODEM="";;
+esac
+
+if [ "x$CUR_MODEM" != "x$TAR_MODEM" ]; then
+    logger "can't restore lora_radio and lora_network"
+    exit 1
+fi
+
+# copy
+cp -r /tmp/backup_conf/etc/  /
+sync

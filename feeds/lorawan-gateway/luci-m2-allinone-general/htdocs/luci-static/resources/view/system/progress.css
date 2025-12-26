@@ -1,0 +1,107 @@
+.steps {
+    width: 100%;
+    height: auto;
+    padding: 0 0;
+    margin: 0 0;
+    box-sizing: border-box;
+    margin: 0 auto;
+    width: auto;
+    display: flex;
+    
+}
+
+.steps .step {
+    /* flex-basis: calc(100% - 50px); */
+    flex-grow: 1;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    position: relative;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.steps .step .step-icon{
+   width: 100%;
+   flex-basis: 100%;
+   display: flex;
+   align-items: center;
+   position: relative;
+}
+.steps .step .step-title{
+   width: 100%;
+   flex-basis: 100%;
+   display: flex;
+   align-items: center;
+   position: relative;
+}
+.steps .step .s-progress {
+    flex-grow: 1;
+    height: 10px;
+    position: relative;
+}
+
+.steps .step .s-progress:after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    transition: ease all 0.3s;
+    transition-delay: 0.2s;
+    z-index: 1;
+    background-color: #ccc;
+}
+
+.steps .step .s-progress span {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    transition: ease all 0.3s;
+    transition-delay: 0.2s;
+    background-color:  #44ea76;
+    z-index: 4;
+}
+
+.steps .step:last-child .s-progress {
+    display: none;
+}
+
+.steps .step .s-point {
+    flex-basis: 50px;
+    max-width: 50px;
+    position: relative;
+    z-index: 1;
+    border-radius: 50%;
+    background-color: #ccc;
+    overflow: hidden;
+    
+    
+}
+.steps .step .s-point.active{
+    background-color:  #44ea76;
+} 
+
+
+.steps .step .s-point:after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 0;
+    padding: 0 0 100% 0;
+    margin: 0 0;
+    box-sizing: border-box;
+    background: inherit;
+}
+
+/* .step.going .s-point {
+    background: rgb(251, 2, 27);
+}
+
+.step.completed .s-point{
+    background: rgb(11, 239, 34);
+} */

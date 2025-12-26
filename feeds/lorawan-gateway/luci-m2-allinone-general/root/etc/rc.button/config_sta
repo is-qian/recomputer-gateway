@@ -1,0 +1,95 @@
+#!/bin/sh
+
+cnt=0
+timeout=$1
+connect_flag="false"
+
+is_station_connected()
+{
+	msg1=$(iwinfo wlan0 assoclist)
+	if [ -z $msg1 ];then
+		return 0 # not ready
+	fi
+	if [[ "$msg1" == "No information available" ]];then
+		return 0 # not ready
+	fi
+
+	msg2=$(iwinfo wlan0-1 assoclist)
+	if [ -z $msg2 ];then
+		msg="$msg1" # wlan0 is ap
+	else 
+		msg="$msg2" # wlan0-1 is ap
+	fi
+
+	if [[ "$msg" == "No station connected" ]];then
+		echo "### No station connected ###"
+		if [[ "$connect_flag" == "true" ]];then
+			connect_flag="false"
+			cnt="0"
+			timeout="30"
+		fi
+		return 1
+	fi
+
+	echo "### station connected ###"
+	connect_flag="true"
+	return 0  #connect
+}
+run=0
+while true
+do
+	#echo "--> $cnt" 
+	cnt=$(($cnt+1))
+	run=$(($run+1))
+	if [ $run -ge 10 ];then
+		is_station_connected
+	fi
+	
+	if [ $cnt -ge $timeout  -a  "$connect_flag" == "false" ]; then
+		uci set wireless.default_radio0.disabled='1'
+
+		wifinet=`uci get wireless.wifinet0` 2>/dev/null
+		wifinet_old=`uci get wireless_old.wifinet0` 2>/dev/null
+		if [ "$wifinet" == "wifi-iface" -a "$wifinet_old" == "wifi-iface" ]; then
+			disable_old=`uci get wireless_old.wifinet0.disabled` 2>/dev/null
+			if [ "$disable_old" != "" ]; then
+				uci set wireless.wifinet0.disabled=$disable_old
+			else
+				disable=`uci get wireless.wifinet0.disabled` 2>/dev/null
+				if [ "$disable" != "" ]; then
+					uci del wireless.wifinet0.disabled
+				fi
+			fi
+		elif [ "$wifinet" != "wifi-iface" -a "$wifinet_old" == "wifi-iface" ]; then
+			uci set wireless.wifinet0='wifi-iface'
+			uci set wireless.wifinet0.device='radio0'
+			uci set wireless.wifinet0.network='wwan'
+			uci set wireless.wifinet0.mode='sta'
+			uci set wireless.wifinet0.encryption='psk2'
+
+			ssid_old=`uci get wireless_old.wifinet0.ssid` 2>/dev/null
+			key_old=`uci get wireless_old.wifinet0.key` 2>/dev/null
+			disable_old=`uci get wireless_old.wifinet0.disabled` 2>/dev/null
+
+			uci set wireless.wifinet0.ssid=$ssid_old
+			uci set wireless.wifinet0.key=$key_old
+			if [ "$disable_old" != "" ]; then
+				uci set wireless.wifinet0.disabled=$disable_old
+			fi
+		fi
+		uci commit wireless
+
+		rm /etc/config/wireless_old
+
+		wifi down
+		wifi up
+
+		break
+	fi
+	sleep 1
+done
+
+echo "EXIT CONFIG MODE" > /dev/console
+ubus call sensecap config '{"state":0}'
+
+return 0

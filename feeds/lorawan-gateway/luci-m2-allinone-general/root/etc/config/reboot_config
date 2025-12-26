@@ -1,0 +1,5 @@
+config interface 'REBOOT'
+	option enable '0'
+	option hh '0'
+	option mm '0'
+	option dd '1'

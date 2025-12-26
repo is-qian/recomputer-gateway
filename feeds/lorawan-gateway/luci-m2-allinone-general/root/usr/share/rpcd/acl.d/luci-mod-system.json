@@ -1,0 +1,134 @@
+{
+	"luci-mod-system-config": {
+		"description": "Grant access to system configuration",
+		"read": {
+			"ubus": {
+				"luci": [ "getInitList", "getLocaltime", "getTimezones" ]
+			},
+			"uci": [ "luci", "system" ]
+		},
+		"write": {
+			"ubus": {
+				"luci": [ "setInitAction", "setLocaltime", "setPassword" ]
+			},
+			"uci": [ "luci", "system" ]
+		}
+	},
+
+	"luci-mod-system-init": {
+		"description": "Grant access to startup configuration",
+		"read": {
+			"ubus": {
+				"luci": [ "getInitList" ]
+			}
+		},
+		"write": {
+			"ubus": {
+				"luci": [ "setInitAction" ]
+			}
+		}
+	},
+
+	"luci-mod-system-flash": {
+		"description": "Grant access to flash operations",
+		"read": {
+			"cgi-io": [ "backup", "download" ],
+			"file": {
+				"/dev/mtdblock[0-9]*": [ "read" ],
+				"/etc/sysupgrade.conf": [ "read" ],
+				"/lib/upgrade/platform.sh": [ "list" ],
+				"/proc/mounts": [ "read" ],
+				"/proc/mtd": [ "read" ],
+				"/proc/partitions": [ "read" ],
+				"/proc/sys/kernel/hostname": [ "read" ],
+				"/sbin/sysupgrade --list-backup": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec", "read", "stat" ],
+				"sensecap": [ "osupgrade", "upgrade_sys"]
+			}
+		},
+		"write": {
+			"cgi-io": [ "upload" ],
+			"file": {
+				"/bin/tar -tzf /tmp/backup.tar.gz": [ "exec" ],
+				"/etc/sysupgrade.conf": [ "write" ],
+				"/sbin/firstboot -y": [ "exec" ],
+				"/sbin/reboot": [ "exec" ],
+				"/sbin/sysupgrade --force /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade -n --force /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade --force -k /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade --force -u /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade --force -u -k /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade -n /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade -k /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade -u /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade -u -k /tmp/firmware.bin": [ "exec" ],
+				"/sbin/pre_restore /tmp/backup.tar.gz": [ "exec" ],
+				"/sbin/sysupgrade --test /tmp/firmware.bin": [ "exec" ],
+				"/sbin/sysupgrade /tmp/firmware.bin": [ "exec" ],
+				"/tmp/backup.tar.gz": [ "write" ],
+				"/tmp/firmware.bin": [ "write" ],
+				"/etc/init.d/osupgrade": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec", "remove", "write" ],
+				"system": [ "validate_firmware_image" ]
+			}
+		}
+	},
+
+	"luci-mod-system-reboot": {
+		"description": "Allow rebooting the device",
+		"write": {
+			"file": {
+				"/sbin/reboot": [ "exec" ],
+				"/etc/init.d/cron": [ "exec" ],
+				"/etc/crontabs/root": [ "write" ]
+			},
+			"ubus": {
+				"file": [ "exec", "write" ],
+				"system": [ "reboot" ]
+			},
+			"uci": [ "reboot_config" ]
+		},
+		"read": {
+			"file": {
+				"/etc/crontabs/root": [ "read" ]
+			},
+			"ubus": {
+				"file": [ "read" ],
+				"system": [ "reboot" ]
+			},
+			"uci": [ "reboot_config" ]
+		}
+	},
+
+	"luci-mod-system-shutdown": {
+		"description": "Allow shutdown the device",
+		"write": {
+			"file": {
+				"/sbin/poweroff": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec" ]
+			}
+		}
+	},
+
+	"luci-mod-system-breath": {
+		"description": "Breathing light config",
+		"write": {
+			"file": {
+				"/etc/init.d/rgb-serve": [ "exec" ]
+			},
+			"ubus": {
+					"file": [ "exec" ]
+			},
+			"uci": [ "rgb_config" ]
+		},
+		"read": {
+			"uci": [ "rgb_config" ]
+		}
+	}
+}

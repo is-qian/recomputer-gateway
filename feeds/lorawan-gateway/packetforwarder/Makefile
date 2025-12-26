@@ -11,7 +11,7 @@ PKG_NAME:=packetforwarder
 PKG_VERSION:=2.1.0
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=sx1302_hal-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/Lora-net/sx1302_hal/tar.gz/V$(PKG_VERSION)?
 PKG_HASH:=4b62aa6a83ad449c68fdd844fc35024586c9faabca3c5a90a2544735b380de5b
 PKG_LICENSE_FILES:=LICENSE.TXT

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# config mode backup wireless
+if [ -e "/etc/config/wireless_old"  ]; then
+	disable=`uci get wireless.wifinet0.disabled` 2>/dev/null
+	if [ "$disable" != "" ]; then
+		# need enable
+		disable_old=`uci get wireless_old.wifinet0.disabled` 2>/dev/null
+		if [ "$disable_old" != "" ]; then
+			uci del wireless_old.wifinet0.disabled
+		fi
+	else
+		# need disable 
+		uci set wireless_old.wifinet0.disabled='1'
+	fi
+	uci commit wireless_old
+fi

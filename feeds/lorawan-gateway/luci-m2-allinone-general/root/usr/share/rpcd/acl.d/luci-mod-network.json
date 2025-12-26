@@ -1,0 +1,99 @@
+{
+	"luci-mod-network-config": {
+		"description": "Grant access to network configuration",
+		"read": {
+			"cgi-io": [ "exec" ],
+			"file": {
+				"/etc/iproute2/rt_tables": [ "read" ],
+				"/proc/sys/net/ipv6/conf/*/mtu": [ "read" ],
+				"/proc/sys/net/ipv6/conf/*/hop_limit": [ "read" ],
+				"/usr/libexec/luci-peeraddr": [ "exec" ],
+				"/usr/lib/opkg/info/netifd.control": [ "read" ],
+				"/sbin/wifi_config_state_check": [ "exec" ],
+				"/sbin/wifi_config_backup": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec" ],
+				"iwinfo": [ "assoclist", "countrylist", "freqlist", "txpowerlist" ],
+				"luci": [ "getSwconfigFeatures", "getSwconfigPortState" ],
+				"sensecap": [ "wifi_state" ]
+			},
+			"uci": [ "dhcp", "firewall", "network", "wireless" ]
+		},
+		"write": {
+			"cgi-io": [ "exec" ],
+			"file": {
+				"/sbin/ifup": [ "exec" ],
+				"/sbin/ifdown": [ "exec" ],
+				"/sbin/wifi": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec" ],
+				"hostapd.*": [ "del_client" ],
+				"iwinfo": [ "scan" ]
+			},
+			"uci": [ "dhcp", "firewall", "network", "wireless" ]
+		}
+	},
+
+	"luci-mod-network-diagnostics": {
+		"description": "Grant access to network diagnostic tools",
+		"read": {
+			"file": {
+				"/bin/ping": [ "exec" ],
+				"/bin/ping6": [ "exec", "list" ],
+				"/bin/traceroute": [ "exec" ],
+				"/bin/traceroute6": [ "exec", "list" ],
+				"/usr/bin/nslookup": [ "exec" ],
+				"/usr/bin/ping": [ "exec" ],
+				"/usr/bin/ping6": [ "exec", "list" ],
+				"/usr/bin/traceroute": [ "exec" ],
+				"/usr/bin/traceroute6": [ "exec", "list" ]
+			},
+			"ubus": {
+				"file": [ "exec", "stat" ],
+				"sensecap": [ "speed_test", "speed_info" ]
+			},
+			"uci": [ "luci" ]
+		}
+	},
+	"luci-mod-network-cellular": {
+		"description": "Grant access to network cellular",
+		"read": {
+			"uci": [ "lte_config" ]
+		},
+		"write": {
+			"uci": [ "lte_config" ]
+		}
+	},
+	"luci-mod-network-multiwan": {
+		"description": "Grant access to network multi wan",
+		"read": {
+			"file": {
+				"/etc/mwan3.user": [ "read" ],
+				"/usr/bin/httping": [ "list" ],
+				"/usr/bin/nping": [ "list" ],
+				"/usr/bin/arping": [ "list" ],
+				"/usr/sbin/mwan3 status": [ "exec" ],
+				"/usr/sbin/mwan3 ifup *": [ "exec" ],
+				"/usr/sbin/mwan3 ifdown *": [ "exec" ],
+				"/usr/sbin/mwan3 internal ipv4": [ "exec" ],
+				"/usr/sbin/mwan3 internal ipv6": [ "exec" ],
+				"/usr/libexec/luci-mwan3 diag * *": [ "exec" ],
+				"/usr/libexec/luci-mwan3 ipset *": [ "exec" ]
+			},
+			"ubus": {
+				"mwan3": [ "status" ]
+			},
+			"uci": [ "mwan3", "network" ]
+		},
+		"write": {
+			"file": {
+				"/etc/mwan3.user": ["write"],
+				"/usr/sbin/mwan3 ifup *": [ "exec" ],
+				"/usr/sbin/mwan3 ifdown *": [ "exec" ]
+			},
+			"uci": [ "mwan3" ]
+		}
+	}
+}

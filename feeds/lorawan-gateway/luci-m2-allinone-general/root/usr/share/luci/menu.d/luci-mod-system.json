@@ -1,0 +1,84 @@
+{
+	"admin/system/system": {
+		"title": "System",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "system/system"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config" ]
+		}
+	},
+
+	"admin/system/admin": {
+		"title": "Administration",
+		"order": 6,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config" ]
+		}
+	},
+
+	"admin/system/admin/password": {
+		"title": "Device Password",
+		"order": 6,
+		"action": {
+			"type": "view",
+			"path": "system/password"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config" ]
+		}
+	},
+	
+	"admin/system/flash": {
+		"title": "Backup / Flash Firmware",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "system/flash"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-flash" ]
+		}
+	},
+
+	"admin/system/reboot": {
+		"title": "Reboot",
+		"order": 4,
+		"action": {
+			"type": "view",
+			"path": "system/reboot"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-reboot" ]
+		}
+	},
+
+	"admin/system/shutdown": {
+		"title": "Shutdown",
+		"order": 5,
+		"action": {
+			"type": "view",
+			"path": "system/shutdown"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-shutdown" ]
+		}
+	},
+
+	"admin/system/breath": {
+		"title": "Breathing Light",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "system/breath"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-breath" ]
+		}
+	}
+}
